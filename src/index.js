@@ -1,49 +1,36 @@
-// para ejecutar server el comando 'npm run dev'
+var express = require('express');
+var path = require('path');
+var logger = require('morgan');
+var multer = require('multer');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const session = require('express-session');
-const bodyParser = require('body-parser');
+const MongoClient = require('mongoose');
 require('dotenv/config');
+var app = express();
 
-// Inicializaciones
-const app = express();
-
-
-
-// Settings
-app.set('port', process.env.PORT || 3000);
-
-/*
-indico a la app donde esta la carpeta que quiero indicar. Dirname retorna el path de donde se ejecuta en este caso notes-app/src. conjoin concateno directorios
-app.set('carpeta que quiero indicar', path.join(__dirname, 'carpeta que quiero indicar'));
-*/
-
-// Funciones
-//app.use(express.urlencoded({ extended: false })); //el false es para no recibir imagenes
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(logger('dev'));
 app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: false })); para leer el body no tengo mucha idea
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(session({
-    secret: 'mysecretapp',
-    resave: true,
-    saveUninitialized: true
-})); // poder almacenar los datos del usuario que ha iniciado sesion temporalmente
+var routes = require('./routes/index');
+var user = require('./routes/users');
+app.use('/', routes);
+app.use('/users', user);
 
-// Variables globales
-
-// Routes
-app.use(require('./routes/index'));
-app.use(require('./routes/users'));
-
-mongoose.connect(process.env.DB_CONNECTION, {
-    useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false, useUnifiedTopology: true }, () => 
-	console.log('connected to DB'));
-
-
-// Server run
-app.listen(app.get('port'), () => {
-    console.log('Server escuchando', app.get('port'));
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+    res.status(404).json("Unknown route");
 });
+
+//Port listener
+app.set('port', process.env.PORT || 3000);
+var server = app.listen(app.get('port'), function () {
+    console.log('Express server listening on port ' + server.address().port);
+});
+ //DB Connection
+MongoClient.connect(process.env.DB_CONNECTION, {
+    useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false, useUnifiedTopology: true
+}, () => console.log('Connected to MongoDB'));

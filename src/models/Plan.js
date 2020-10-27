@@ -7,6 +7,7 @@ const PlanSchema = new mongoose.Schema({
     Azucar: { type: Number, required: true },
     Carbohidratos: { type: Number, required: true },
     Grasas: { type: Number, required: true },
+    Fibra: { type: Number, required: true },
     Kcal: { type: Number, required: true }
 }, { collection: 'Plan' });
 

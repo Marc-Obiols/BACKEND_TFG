@@ -1,6 +1,7 @@
 // Rutas sobre usuarios
 const router = require('express').Router();
 const User = require('../models/User');
+const Plan = require('../models/Plan');
 var fs = require('fs');
 var path = require('path');
 const crypto = require('crypto');
@@ -12,9 +13,10 @@ router.post('/register', async (req, res) => {
     var fechas = [Date.now()];
 
     //Calcular peso ideal y IMC usuario
-    var peso_ideal = 45;
-    var IMC = 45;
-    
+    var IMC = (req.body.peso_actual*10000)/(Math.pow(req.body.altura, 2));
+    IMC = IMC.toFixed();
+    var peso_ideal = PI(req.body.altura, req.body.sexo).toFixed();
+
     try { //por si existe un user con ese nombre de usuario o email
         const user = new User({
             username: req.body.username,
@@ -37,19 +39,42 @@ router.post('/register', async (req, res) => {
         if (isEmpty(savedUser)) {
             res.status(400).json("Internal DB error");
         }
-        //Calcular el plan del usuario
-        res.status(200).json(savedUser);
+        ano_nac = savedUser.fecha_nacimiento.getFullYear();
+        var today = new Date();
+        var edad =  today.getFullYear() - ano_nac;
+        tmb_peso_deseado = TMB(savedUser.peso_deseado, req.body.sexo, edad);
+        var hidratos = (tmb_peso_deseado * 0.62)/4.1; // el 62% del tmb han de ser hidratos
+        var proteinas = (tmb_peso_deseado * 0.125)/4.35; // el % del tmb han de ser proteinas
+        var grasas = (tmb_peso_deseado * 0.225)/9.3; // el % del tmb han de ser grasas
+        var fibras = tmb_peso_deseado * 0.0115; // 11.5 gramos de fibra por 1000 kcal
+        var azucar = (tmb_peso_deseado * 0.03)/4;
+        
+        const plan = new Plan({
+            Usuario: savedUser._id,
+            Proteinas: proteinas.toFixed(),
+            Sodio: 3,
+            Azucar: azucar.toFixed(),
+            Carbohidratos: hidratos.toFixed(),
+            Grasas: grasas.toFixed(),
+            Fibra: fibras.toFixed(),
+            Kcal: tmb_peso_deseado
+        });
+        const savedPlan = await plan.save();
+        if (isEmpty(savedPlan)) {
+            res.status(400).json("Internal DB error");
+        }
+        return res.status(200).json(savedUser);
     }
     catch(err) {
         console.log("error: " + err)
-        res.status(413).json("El usuario o el email ya estan en uso");
+        return res.status(413).json(err);
     }
 });
 
 router.post('/login', async (req, res) => {
 
     var hash = crypto.createHash('sha256');
-    const query = await (await User.findOne({ username: req.body.username }));
+    const query = await User.findOne({ username: req.body.username });
     console.log(query);
     if (query === null) return res.status(411).json('Nombre usuario incorrecto');
     else {
@@ -69,39 +94,56 @@ router.get('/:id/image', async (req, res) => {
 router.post('/modificar/:id', async (req,res) => {
     id = req.params.id;
     username = req.body.username
-    altura = req.body.altura
     peso_deseado = req.body.peso_deseado
     email = req.body.email
+    console.log("HOLA")
 
-    const user = await User.findById({ _id: id });
-    if(isEmpty(user)) {
-        res.status(402).json("usuario inexistente");
-    }
-    else {
-        if (isEmpty(username)) {
-            username = user.username;
+    try {
+        const user = await User.findById({ _id: id });
+        if(isEmpty(user)) {
+            res.status(402).json("usuario inexistente");
         }
-        if (isEmpty(peso_actual)) {
-            peso_actual = user.peso_actual;
-        }
-        if (isEmpty(email)) {
-            email = user.email;
-        }
-
-        //Volver a calcular el IMC
-        const userMod = await User.findByIdAndUpdate({ _id: id }, {
-            username: username,
-            altura: altura,
-            email: email,
-            peso_deseado: peso_deseado,
-            fechas: hist_fechas,
-            pesos: hist_pesos
-        });
-        if (isEmpty(userMod)) res.status(403).json("no se ha podido modificar usuario");
         else {
-            //Volver a calcular el plan del usuario
-            res.status(200).json(userMod);
+            if (isEmpty(username)) {
+                username = user.username;
+            }
+            if (isEmpty(email)) {
+                email = user.email;
+            }
+
+            const userMod = await User.findByIdAndUpdate({ _id: id }, {
+                username: username,
+                email: email,
+                peso_deseado: peso_deseado
+            });
+            if (isEmpty(userMod)) res.status(403).json("no se ha podido modificar usuario");
+            else {
+                ano_nac = userMod.fecha_nacimiento.getFullYear();
+                var today = new Date();
+                var edad =  today.getFullYear() - ano_nac;
+                tmb_peso_deseado = TMB(peso_deseado, userMod.sexo, edad);
+                var hidratos = (tmb_peso_deseado * 0.62)/4.1; // el 62% del tmb han de ser hidratos
+                var proteinas = (tmb_peso_deseado * 0.125)/4.35; // el % del tmb han de ser proteinas
+                var grasas = (tmb_peso_deseado * 0.225)/9.3; // el % del tmb han de ser grasas
+                var fibras = tmb_peso_deseado * 0.0115; // 11.5 gramos de fibra por 1000 kcal
+                var azucar = (tmb_peso_deseado * 0.03)/4;
+
+                const planMod = await Plan.findOneAndUpdate({ Usuario: userMod._id }, {
+                    Proteinas: proteinas.toFixed(),
+                    Sodio: 3,
+                    Azucar: azucar.toFixed(),
+                    Carbohidratos: hidratos.toFixed(),
+                    Grasas: grasas.toFixed(),
+                    Fibra: fibras.toFixed(),
+                    Kcal: tmb_peso_deseado
+                });
+                userMod.peso_deseado = peso_deseado
+                res.status(200).json(userMod);
+            }
         }
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json("Usuario innexistente");
     }
 });
 
@@ -136,11 +178,13 @@ router.post('/registrarPes/:id', async (req,res) => {
                 hist_pesos.push(peso_actual)     
                 hist_fechas.push(Date.now())
             }
-            //Volver a calcular el IMC
+            var IMC = (peso_actual*10000)/(Math.pow(user.altura, 2));
+            IMC = IMC.toFixed();
             const userMod = await User.findByIdAndUpdate({ _id: id }, {
                 peso_actual: peso_actual,
                 fechas: hist_fechas,
-                pesos: hist_pesos          
+                pesos: hist_pesos,
+                IMC: IMC      
             });
             
             if (isEmpty(userMod)) res.status(403).json("no se ha podido modificar usuario");
@@ -148,7 +192,8 @@ router.post('/registrarPes/:id', async (req,res) => {
                 userMod.peso_actual = peso_actual
                 userMod.fechas = hist_fechas
                 userMod.pesos = hist_pesos
-                 res.status(200).json(userMod);
+                userMod.IMC = IMC
+                res.status(200).json(userMod);
             }
         }
     } catch(err) {
@@ -163,6 +208,52 @@ function isEmpty(obj) {
             return false;
     }
     return true;
+}
+
+function TMB(peso, sexo, edad) {
+    var result
+    if (sexo == "hombre") {
+        if (edad < 19) { //1-18
+            result = 0.056 * peso + 2.898
+        }
+        else if(edad < 31 && edad > 18) { //19-30
+            result = 0.062 * peso + 2.036
+        }
+        else if(edad < 61 && edad > 30) { //31-60
+            result = 0.034 * peso + 3.538
+        }
+        else { //61 
+            result = 0.038 * peso + 2.755
+        }
+    }
+    else {
+        if (edad < 19) { //1-18
+            result = 0.074 * peso + 2.754
+        }
+        else if(edad < 31 && edad > 18) { //19-30
+            result = 0.063 * peso + 2.896
+        }
+        else if(edad < 61 && edad > 30) { //31-60
+            result = 0.048 * peso + 3.653
+        }
+        else { //61 
+            result = 0.049 * peso + 2.459
+        }
+    }
+    result = result * 239 * 1.7
+    return result.toFixed();
+}
+
+function PI(alt, sexo) {
+    var alt_m = alt/100
+    if (sexo == "hombre") {
+        console.log(Math.pow(alt_m,2) * 26)
+        return Math.pow(alt_m,2) * 24;
+    }
+    else{
+        console.log(Math.pow(alt_m,2) * 26)
+        return Math.pow(alt_m,2) * 22;
+    }
 }
 
 module.exports = router;

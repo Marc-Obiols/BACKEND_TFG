@@ -212,7 +212,9 @@ function isEmpty(obj) {
 
 function TMB(peso, sexo, edad) {
     var result
-    if (sexo == "hombre") {
+    var comp = sexo.localeCompare("hombre")
+    if (comp == 0) {
+        console.log("SOY HOMBRE")
         if (edad < 19) { //1-18
             result = 0.056 * peso + 2.898
         }
@@ -227,6 +229,7 @@ function TMB(peso, sexo, edad) {
         }
     }
     else {
+        console.log("SOY MUJER")
         if (edad < 19) { //1-18
             result = 0.074 * peso + 2.754
         }
@@ -246,12 +249,15 @@ function TMB(peso, sexo, edad) {
 
 function PI(alt, sexo) {
     var alt_m = alt/100
-    if (sexo == "hombre") {
+    var comp = sexo.localeCompare("hombre")
+    if (comp == 0) {
         console.log(Math.pow(alt_m,2) * 26)
+        console.log("SOY HOMBRE")
         return Math.pow(alt_m,2) * 24;
     }
     else{
         console.log(Math.pow(alt_m,2) * 26)
+        console.log("SOY MUJER")
         return Math.pow(alt_m,2) * 22;
     }
 }

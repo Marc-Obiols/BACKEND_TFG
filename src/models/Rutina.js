@@ -6,7 +6,7 @@ const RutinaSchema = new mongoose.Schema({
     tiempo_total: { type: Number, required: true, default: 0},
     tiempo_descanso: { type: Number, required: true},
     tiempos: [Number],
-    ejercicios:  [{type: mongoose.Schema.Types.ObjectId, ref: 'Ejercicio'}],
+    ejercicios:  [String],
     predeterminada: { type: Boolean, required: true, default: false },
     copias: { type: Number, required: true, default: 0},
 }, { collection: 'Rutina' });

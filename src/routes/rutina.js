@@ -28,16 +28,12 @@ router.post('/register', async (req, res) => {
 //Get id y nombre rutinas de un user
 router.get('/:id', async (req, res) => {
     try {
-        console.log("aqui")
         const rutinas = await Rutina.find({propietario: req.params.id});
-        console.log("aqui")
         let response = [];
         for(let i = 0; i < rutinas.length; i++) {
             var rut = {nombre: rutinas[i].nombre, id:rutinas[i]._id};
             response.push(rut)
         }
-        console.log("aqui")
-        console.log(response)
         res.status(200).json(response);
     } catch(err) {
         console.log("error: " + err)
@@ -45,9 +41,52 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+
+//Consultar datos de una rutina
+router.get('/datos/:id', async (req, res) => {
+
+    try {
+        var id = req.params.id
+        const rutina = await Rutina.findById({ _id: id });
+        if (isEmpty(rutina)) return res.status(403).json("no existe la rutina");
+        console.log(rutina)
+        return res.status(200).json(rutina);
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
+
+//añadir ejercicio a una rutina
 router.post('/addEjercicio/:id', async (req, res) => {
 
-
+    try{
+        var id = req.params.id
+        const rutina = await Rutina.findById({ _id: id });
+        if (isEmpty(rutina)) return res.status(403).json("no existe la rutina");
+        var ejercicios = rutina.ejercicios
+        var tiempos = rutina.tiempos
+        tiempos.push(req.body.tiempo_ejercicio)
+        ejercicios.push(req.body.nombre_ejercicio)
+        var tiempo_total = rutina.tiempo_total
+        if (tiempo_total == 0) tiempo_total += req.body.tiempo_ejercicio
+        else tiempo_total += req.body.tiempo_ejercicio + rutina.tiempo_descanso
+        console.log(tiempo_total)
+        const rutinaMod = await Rutina.findByIdAndUpdate({ _id: id }, {
+            ejercicios: ejercicios,
+            tiempos: tiempos,
+            tiempo_total: tiempo_total
+        });
+        if (isEmpty(rutinaMod)) return res.status(403).json("no se ha podido añadir el ejercicio");
+        console.log(rutinaMod)
+        rutinaMod.ejercicios.push(req.body.nombre_ejercicio)
+        rutinaMod.tiempos.push(req.body.tiempo_ejercicio)
+        rutinaMod.tiempo_total = tiempo_total
+        return res.status(200).json(rutinaMod);
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
 });
 
 function isEmpty(obj) {

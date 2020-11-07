@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Ejercicio = require('../models/Ejercicio');
 const Rutina = require('../models/Rutina');
 var path = require('path');
+const { findById } = require('../models/Ejercicio');
 
 router.post('/register', async (req, res) => {
 
@@ -83,6 +84,59 @@ router.post('/addEjercicio/:id', async (req, res) => {
         rutinaMod.tiempos.push(req.body.tiempo_ejercicio)
         rutinaMod.tiempo_total = tiempo_total
         return res.status(200).json(rutinaMod);
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
+
+//eliminar
+router.post('/eliminar/:id', async (req, res) => {
+    var id = req.params.id
+    console.log(id + " : " + req.body.id_user)
+    try {
+        const rutina = await Rutina.findByIdAndDelete({ _id: id })
+        if (!rutina) return res.status(411).json('id incorrecto');
+        const rutinas = await Rutina.find({propietario: req.body.id_user});
+        let response = [];
+        for(let i = 0; i < rutinas.length; i++) {
+            var rut = {nombre: rutinas[i].nombre, id:rutinas[i]._id};
+            response.push(rut)
+        }
+        console.log(response)
+        res.status(200).json(response);
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
+
+router.post('/modificar/:id', async (req, res) => {
+    var id = req.params.id
+    var nombre = req.body.nombre
+    var tiempo_descanso = req.body.tiempo_descanso
+    var tiempo_total
+    try {
+        const rutina = await Rutina.findById({ _id: id })
+        if (!rutina) return res.status(411).json('id incorrecto');
+        if (rutina.tiempo_descanso == tiempo_descanso) {
+            tiempo_total = rutina.tiempo_total
+        }
+        else {
+            tiempo_total = rutina.tiempo_total + (tiempo_descanso- rutina.tiempo_descanso)*(rutina.ejercicios.length-1)
+        }
+        console.log(tiempo_total)
+        const rutinaMod = await Rutina.findByIdAndUpdate({ _id: id }, {
+            nombre: nombre,
+            tiempo_descanso: tiempo_descanso,
+            tiempo_total: tiempo_total
+        });
+        if (!rutinaMod) return res.status(411).json('id incorrecto');
+        rutinaMod.nombre = nombre
+        rutinaMod.tiempo_descanso = tiempo_descanso
+        rutinaMod.tiempo_total = tiempo_total
+        return res.status(200).json(rutinaMod);
+
     } catch(err) {
         console.log("error: " + err)
         res.status(413).json(err);

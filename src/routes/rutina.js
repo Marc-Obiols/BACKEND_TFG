@@ -2,7 +2,7 @@ const router = require('express').Router();
 const Ejercicio = require('../models/Ejercicio');
 const Rutina = require('../models/Rutina');
 var path = require('path');
-const { findById } = require('../models/Ejercicio');
+const { findById, findByIdAndUpdate } = require('../models/Ejercicio');
 
 router.post('/register', async (req, res) => {
 
@@ -119,12 +119,15 @@ router.post('/modificar/:id', async (req, res) => {
     try {
         const rutina = await Rutina.findById({ _id: id })
         if (!rutina) return res.status(411).json('id incorrecto');
-        if (rutina.tiempo_descanso == tiempo_descanso) {
+        if (rutina.tiempos.length == 0)
+            tiempo_total = 0
+        else if (rutina.tiempo_descanso == tiempo_descanso) {
             tiempo_total = rutina.tiempo_total
         }
         else {
             tiempo_total = rutina.tiempo_total + (tiempo_descanso- rutina.tiempo_descanso)*(rutina.ejercicios.length-1)
         }
+
         console.log(tiempo_total)
         const rutinaMod = await Rutina.findByIdAndUpdate({ _id: id }, {
             nombre: nombre,
@@ -142,6 +145,75 @@ router.post('/modificar/:id', async (req, res) => {
         res.status(413).json(err);
     }
 });
+
+//eliminar un ejercicio de la rutina
+router.post('/eliminarEjercicio/:id', async (req, res) => {
+    var id = req.params.id
+    var posicion = req.body.posicion
+    try {
+        const rutina = await Rutina.findById({ _id: id })
+        if (!rutina) return res.status(411).json('id incorrecto');
+        var tiemp = rutina.tiempos.splice(posicion, 1)
+        var ejer = rutina.ejercicios.splice(posicion, 1)
+        if (rutina.ejercicios.length == 0) {
+            rutina.tiempo_total = 0
+        }
+        else {
+            rutina.tiempo_total = rutina.tiempo_total - (parseInt(tiemp) + rutina.tiempo_descanso)
+        }
+        const rutinaMod = await Rutina.findByIdAndUpdate({_id: id},{
+            ejercicios: rutina.ejercicios,
+            tiempos: rutina.tiempos,
+            tiempo_total: rutina.tiempo_total
+        })
+        if (!rutinaMod) return res.status(412).json('id No se ha podido modificar la rutina');
+        rutinaMod.ejercicios = rutina.ejercicios
+        rutinaMod.tiempos = rutina.tiempos
+        rutinaMod.tiempo_total = rutina.tiempo_total
+        return res.status(200).json(rutinaMod);
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
+
+//modificar un ejercicio de la rutina
+router.post('/modEjercicio/:id', async (req, res) => {
+    var id = req.params.id
+    var posicion = req.body.posicion
+    var tiempo_nuev = req.body.tiempo_nuev
+    var posicion_nuev = req.body.nueva_posicion
+    console.log(posicion_nuev + " : " + posicion)
+    try {
+        const rutina = await Rutina.findById({ _id: id })
+        if (!rutina) return res.status(411).json('id incorrecto')
+        if (posicion >= rutina.tiempos.length || posicion < 0) return res.status(413).json('la posocion no es correcta')
+        rutina.tiempo_total = rutina.tiempo_total - rutina.tiempos[posicion] + tiempo_nuev
+        rutina.tiempos[posicion] = tiempo_nuev
+        if (posicion_nuev != posicion) {
+            console.log("HOLA")
+            var aux_t = rutina.tiempos[posicion]
+            var aux_n = rutina.ejercicios[posicion]
+            rutina.ejercicios[posicion] = rutina.ejercicios[posicion_nuev]
+            rutina.tiempos[posicion] = rutina.tiempos[posicion_nuev]
+            rutina.ejercicios[posicion_nuev] = aux_n
+            rutina.tiempos[posicion_nuev] = aux_t
+        }
+        const rutinaMod = await Rutina.findByIdAndUpdate({_id: id},{
+            tiempos: rutina.tiempos,
+            ejercicios: rutina.ejercicios,
+            tiempo_total: rutina.tiempo_total
+        })
+        if (!rutinaMod) return res.status(412).json('id No se ha podido modificar la rutina');
+        rutinaMod.tiempos = rutina.tiempos
+        rutinaMod.ejercicios = rutina.ejercicios
+        rutinaMod.tiempo_total = rutina.tiempo_total
+        return res.status(200).json(rutinaMod);
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+}
+}); 
 
 function isEmpty(obj) {
     for (var key in obj) {

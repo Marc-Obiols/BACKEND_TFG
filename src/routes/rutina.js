@@ -2,7 +2,6 @@ const router = require('express').Router();
 const Ejercicio = require('../models/Ejercicio');
 const Rutina = require('../models/Rutina');
 var path = require('path');
-const { findById, findByIdAndUpdate } = require('../models/Ejercicio');
 
 router.post('/register', async (req, res) => {
 
@@ -28,6 +27,7 @@ router.post('/register', async (req, res) => {
 
 //Get id y nombre rutinas de un user
 router.get('/:id', async (req, res) => {
+    console.log("ES AQUI EN ESTE GET")
     try {
         const rutinas = await Rutina.find({propietario: req.params.id});
         let response = [];
@@ -183,7 +183,6 @@ router.post('/modEjercicio/:id', async (req, res) => {
     var posicion = req.body.posicion
     var tiempo_nuev = req.body.tiempo_nuev
     var posicion_nuev = req.body.nueva_posicion
-    console.log(posicion_nuev + " : " + posicion)
     try {
         const rutina = await Rutina.findById({ _id: id })
         if (!rutina) return res.status(411).json('id incorrecto')
@@ -191,7 +190,6 @@ router.post('/modEjercicio/:id', async (req, res) => {
         rutina.tiempo_total = rutina.tiempo_total - rutina.tiempos[posicion] + tiempo_nuev
         rutina.tiempos[posicion] = tiempo_nuev
         if (posicion_nuev != posicion) {
-            console.log("HOLA")
             var aux_t = rutina.tiempos[posicion]
             var aux_n = rutina.ejercicios[posicion]
             rutina.ejercicios[posicion] = rutina.ejercicios[posicion_nuev]
@@ -213,7 +211,30 @@ router.post('/modEjercicio/:id', async (req, res) => {
         console.log("error: " + err)
         res.status(413).json(err);
 }
-}); 
+});
+
+//Get rutinas predeterminadas
+router.get('/predeterminada/datos', async (req, res) => {
+    
+    try {
+        console.log("HOLA")
+        const rutinas = await Rutina.find({})
+        if (!rutinas) return res.status(411).json('no hay rutinas predeterminadas')
+        let response = [];
+        for(let i = 0; i < rutinas.length; i++) {
+            if (rutinas[i].predeterminada) {
+                var rut = {nombre: rutinas[i].nombre, id:rutinas[i]._id};
+                response.push(rut)
+            }
+        }
+        console.log(response)
+        return res.status(200).json(response)
+    } catch(err) {
+        console.log("ES AQUI")
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
 
 function isEmpty(obj) {
     for (var key in obj) {

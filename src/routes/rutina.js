@@ -217,7 +217,6 @@ router.post('/modEjercicio/:id', async (req, res) => {
 router.get('/predeterminada/datos', async (req, res) => {
     
     try {
-        console.log("HOLA")
         const rutinas = await Rutina.find({})
         if (!rutinas) return res.status(411).json('no hay rutinas predeterminadas')
         let response = [];
@@ -230,7 +229,6 @@ router.get('/predeterminada/datos', async (req, res) => {
         console.log(response)
         return res.status(200).json(response)
     } catch(err) {
-        console.log("ES AQUI")
         console.log("error: " + err)
         res.status(413).json(err);
     }

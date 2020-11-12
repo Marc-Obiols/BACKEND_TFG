@@ -20,11 +20,13 @@ var user = require('./routes/users');
 var plan = require('./routes/plan');
 var ejercicio = require('./routes/ejercicio');
 var rutina = require('./routes/rutina');
+var alimentacion = require('./routes/alimentacion');
 app.use('/', routes);
 app.use('/users', user);
 app.use('/plan', plan);
 app.use('/ejercicio', ejercicio);
 app.use('/rutina', rutina);
+app.use('/alimentacion', alimentacion)
 
 
 // catch 404 and forward to error handler

@@ -2,6 +2,7 @@
 const router = require('express').Router();
 const User = require('../models/User');
 const Plan = require('../models/Plan');
+const Alimentacion = require('../models/Alimentacion');
 var fs = require('fs');
 var path = require('path');
 const crypto = require('crypto');
@@ -63,6 +64,15 @@ router.post('/register', async (req, res) => {
         if (isEmpty(savedPlan)) {
             res.status(400).json("Internal DB error");
         }
+        
+        const alimentacion = new Alimentacion({
+            propietario: savedUser._id,
+        });
+        const savedAlimentacion = await alimentacion.save();
+        if (isEmpty(savedAlimentacion)) {
+            res.status(400).json("Internal DB error");
+        }
+
         return res.status(200).json(savedUser);
     }
     catch(err) {

@@ -121,6 +121,36 @@ router.post('/removeAlimento', async (req, res) => {
     }
 });
 
+router.get('/historial/:id', async (req, res) => {
+    var id = req.params.id
+    try {
+        const alimentacion = await Alimentacion.find({propietario: id});
+        if (!alimentacion) return res.status(411).json('no existe alimentacion con ese id');
+        var aux =  {fecha: req.body.id_alimento, kcal: req.body.cantidad};
+        let response = [];
+        for (let i = 0; i < alimentacion[0].registro.length; i++) {
+            response.push(alimentacion[0].registro[i].fecha)
+        }
+        return res.status(200).json(response)
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
+
+router.post('/concreta/:id', async (req, res) => {
+    var pos = req.body.posicion
+    var id = req.params.id
+    try {
+        const alimentacion = await Alimentacion.find({propietario: id});
+        if (!alimentacion) return res.status(411).json('no existe alimentacion con ese id');
+        return res.status(200).json(alimentacion[0].registro[pos])
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json(err);
+    }
+});
+
 
 function isEmpty(obj) {
     for (var key in obj) {

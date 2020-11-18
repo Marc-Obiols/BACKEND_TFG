@@ -2,10 +2,14 @@
 const router = require('express').Router();
 const User = require('../models/User');
 const Plan = require('../models/Plan');
+const Email_val = require('../email/verificar_cuenta');
+const EmailValidator = require('email-deep-validator');
 const Alimentacion = require('../models/Alimentacion');
 var fs = require('fs');
 var path = require('path');
 const crypto = require('crypto');
+
+const emailValidator = new EmailValidator();
 
 router.post('/register', async (req, res) => {
 
@@ -13,71 +17,80 @@ router.post('/register', async (req, res) => {
     var pesos = [req.body.peso_actual];
     var fechas = [Date.now()];
 
-    //Calcular peso ideal y IMC usuario
-    var IMC = (req.body.peso_actual*10000)/(Math.pow(req.body.altura, 2));
-    IMC = IMC.toFixed();
-    var peso_ideal = PI(req.body.altura, req.body.sexo).toFixed();
+    var { wellFormed, validDomain, validMailbox } = await emailValidator.verify(req.body.email);
+    if (wellFormed && validDomain) {
 
-    try { //por si existe un user con ese nombre de usuario o email
-        const user = new User({
-            username: req.body.username,
-            password: hash.update(req.body.password).digest('hex'),
-            imagen: { data:  fs.readFileSync(path.join(__dirname, '../images/imagenPerfil.jpg')), contentType: 'image/jpg'},
-            altura: req.body.altura,
-            peso_actual: req.body.peso_actual,
-            peso_deseado: req.body.peso_deseado,
-            peso_ideal: peso_ideal,
-            fecha_nacimiento: req.body.fecha_nacimiento,
-            fecha_creacion: Date.now(),
-            pesos: pesos,
-            fechas: fechas,
-            email: req.body.email,
-            sexo: req.body.sexo,
-            IMC: IMC
-        });
+        //Calcular peso ideal y IMC usuario
+        var IMC = (req.body.peso_actual*10000)/(Math.pow(req.body.altura, 2));
+        IMC = IMC.toFixed();
+        var peso_ideal = PI(req.body.altura, req.body.sexo).toFixed();
 
-        const savedUser = await user.save();
-        if (isEmpty(savedUser)) {
-            res.status(400).json("Internal DB error");
-        }
-        ano_nac = savedUser.fecha_nacimiento.getFullYear();
-        var today = new Date();
-        var edad =  today.getFullYear() - ano_nac;
-        tmb_peso_deseado = TMB(savedUser.peso_deseado, req.body.sexo, edad);
-        var hidratos = (tmb_peso_deseado * 0.62)/4.1; // el 62% del tmb han de ser hidratos
-        var proteinas = (tmb_peso_deseado * 0.125)/4.35; // el % del tmb han de ser proteinas
-        var grasas = (tmb_peso_deseado * 0.225)/9.3; // el % del tmb han de ser grasas
-        var fibras = tmb_peso_deseado * 0.0115; // 11.5 gramos de fibra por 1000 kcal
-        var azucar = (tmb_peso_deseado * 0.03)/4;
-        
-        const plan = new Plan({
-            Usuario: savedUser._id,
-            Proteinas: proteinas.toFixed(),
-            Sodio: 3,
-            Azucar: azucar.toFixed(),
-            Carbohidratos: hidratos.toFixed(),
-            Grasas: grasas.toFixed(),
-            Fibra: fibras.toFixed(),
-            Kcal: tmb_peso_deseado
-        });
-        const savedPlan = await plan.save();
-        if (isEmpty(savedPlan)) {
-            res.status(400).json("Internal DB error");
-        }
-        
-        const alimentacion = new Alimentacion({
-            propietario: savedUser._id,
-        });
-        const savedAlimentacion = await alimentacion.save();
-        if (isEmpty(savedAlimentacion)) {
-            res.status(400).json("Internal DB error");
-        }
+        try { //por si existe un user con ese nombre de usuario o email
+            const user = new User({
+                username: req.body.username,
+                password: hash.update(req.body.password).digest('hex'),
+                imagen: { data:  fs.readFileSync(path.join(__dirname, '../images/imagenPerfil.jpg')), contentType: 'image/jpg'},
+                altura: req.body.altura,
+                peso_actual: req.body.peso_actual,
+                peso_deseado: req.body.peso_deseado,
+                peso_ideal: peso_ideal,
+                fecha_nacimiento: req.body.fecha_nacimiento,
+                fecha_creacion: Date.now(),
+                pesos: pesos,
+                fechas: fechas,
+                email: req.body.email,
+                sexo: req.body.sexo,
+                IMC: IMC
+            });
 
-        return res.status(200).json(savedUser);
+            const savedUser = await user.save();
+            if (isEmpty(savedUser)) {
+                res.status(400).json("Internal DB error");
+            }
+
+            Email_val.sendVerificationMessage(savedUser.email, savedUser._id);
+            ano_nac = savedUser.fecha_nacimiento.getFullYear();
+            var today = new Date();
+            var edad =  today.getFullYear() - ano_nac;
+            tmb_peso_deseado = TMB(savedUser.peso_deseado, req.body.sexo, edad);
+            var hidratos = (tmb_peso_deseado * 0.62)/4.1; // el 62% del tmb han de ser hidratos
+            var proteinas = (tmb_peso_deseado * 0.125)/4.35; // el % del tmb han de ser proteinas
+            var grasas = (tmb_peso_deseado * 0.225)/9.3; // el % del tmb han de ser grasas
+            var fibras = tmb_peso_deseado * 0.0115; // 11.5 gramos de fibra por 1000 kcal
+            var azucar = (tmb_peso_deseado * 0.03)/4;
+            
+            const plan = new Plan({
+                Usuario: savedUser._id,
+                Proteinas: proteinas.toFixed(),
+                Sodio: 3,
+                Azucar: azucar.toFixed(),
+                Carbohidratos: hidratos.toFixed(),
+                Grasas: grasas.toFixed(),
+                Fibra: fibras.toFixed(),
+                Kcal: tmb_peso_deseado
+            });
+            const savedPlan = await plan.save();
+            if (isEmpty(savedPlan)) {
+                res.status(400).json("Internal DB error");
+            }
+            
+            const alimentacion = new Alimentacion({
+                propietario: savedUser._id,
+            });
+            const savedAlimentacion = await alimentacion.save();
+            if (isEmpty(savedAlimentacion)) {
+                res.status(400).json("Internal DB error");
+            }
+
+            return res.status(200).json(savedUser);
+        }
+        catch(err) {
+            console.log("error: " + err)
+            return res.status(413).json(err);
+        }
     }
-    catch(err) {
-        console.log("error: " + err)
-        return res.status(413).json(err);
+    else {
+        return res.status(408).json("email innexistente");
     }
 });
 

@@ -15,6 +15,7 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     sexo: {type: String, require: true},
     IMC: { type: Number, required: true },
+    validado: { type: Boolean, required: true, default: false },
 }, { collection: 'Users' });
 
 module.exports = mongoose.model('Users', UserSchema);

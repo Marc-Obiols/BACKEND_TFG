@@ -9,6 +9,7 @@ const RutinaSchema = new mongoose.Schema({
     ejercicios:  [String],
     predeterminada: { type: Boolean, required: true, default: false },
     copias: { type: Number, required: true, default: 0},
+    dificultad: { type: String, required: true},
 }, { collection: 'Rutina' });
 
 module.exports = mongoose.model('Rutina', RutinaSchema);

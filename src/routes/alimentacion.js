@@ -98,11 +98,11 @@ router.post('/removeAlimento', async (req, res) => {
 
         var alimento = alimentacion[0].registro[alimentacion[0].registro.length-1].alimentos[pos]
         console.log(alimento)
-        alimentacion[0].registro[alimentacion[0].registro.length-1].kcal -= (alimento.kcal_al*alimento.cantidad/100).toFixed(2)
-        alimentacion[0].registro[alimentacion[0].registro.length-1].fibra -= (alimento.fibra_al*alimento.cantidad/100).toFixed(2)
-        alimentacion[0].registro[alimentacion[0].registro.length-1].proteina -= (alimento.proteina_al*alimento.cantidad/100).toFixed(2)
-        alimentacion[0].registro[alimentacion[0].registro.length-1].grasas -= (alimento.grasas_al*alimento.cantidad/100).toFixed(2)
-        alimentacion[0].registro[alimentacion[0].registro.length-1].carbo -= (alimento.carbo_al*alimento.cantidad/100).toFixed(2)
+        alimentacion[0].registro[alimentacion[0].registro.length-1].kcal =  (alimentacion[0].registro[alimentacion[0].registro.length-1].kcal-(alimento.kcal_al*alimento.cantidad/100)).toFixed(2)
+        alimentacion[0].registro[alimentacion[0].registro.length-1].fibra =  (alimentacion[0].registro[alimentacion[0].registro.length-1].fibra-(alimento.fibra_al*alimento.cantidad/100)).toFixed(2)
+        alimentacion[0].registro[alimentacion[0].registro.length-1].proteina =  (alimentacion[0].registro[alimentacion[0].registro.length-1].proteina-(alimento.proteina_al*alimento.cantidad/100)).toFixed(2)
+        alimentacion[0].registro[alimentacion[0].registro.length-1].grasas =  (alimentacion[0].registro[alimentacion[0].registro.length-1].grasas-(alimento.grasas_al*alimento.cantidad/100)).toFixed(2)
+        alimentacion[0].registro[alimentacion[0].registro.length-1].carbo =  (alimentacion[0].registro[alimentacion[0].registro.length-1].carbo-(alimento.carbo_al*alimento.cantidad/100)).toFixed(2)
         alimentacion[0].registro[alimentacion[0].registro.length-1].alimentos.splice(pos, 1)
 
         console.log(alimentacion[0].registro[alimentacion[0].registro.length-1])

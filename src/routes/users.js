@@ -22,7 +22,7 @@ router.post('/register', async (req, res) => {
 
         //Calcular peso ideal y IMC usuario
         var IMC = (req.body.peso_actual*10000)/(Math.pow(req.body.altura, 2));
-        IMC = IMC.toFixed();
+        IMC = IMC.toFixed(2);
         var peso_ideal = PI(req.body.altura, req.body.sexo).toFixed();
 
         try { //por si existe un user con ese nombre de usuario o email
@@ -98,10 +98,10 @@ router.post('/login', async (req, res) => {
 
     var hash = crypto.createHash('sha256');
     const query = await User.findOne({ username: req.body.username });
-    console.log(query);
     if (query === null) return res.status(411).json('Nombre usuario incorrecto');
     else {
         if (query.password != hash.update(req.body.password).digest('hex')) return res.status(411).json('Password incorrecto');
+        if (!query.validado) return res.status(410).json('No esta validado');
         else return res.status(200).send(query);
     }
 });
@@ -116,10 +116,9 @@ router.get('/:id/image', async (req, res) => {
 
 router.post('/modificar/:id', async (req,res) => {
     id = req.params.id;
-    username = req.body.username
     peso_deseado = req.body.peso_deseado
-    email = req.body.email
-    console.log("HOLA")
+    altura = req.body.altura
+    peso_actual = req.body.peso_actual
 
     try {
         const user = await User.findById({ _id: id });
@@ -127,18 +126,42 @@ router.post('/modificar/:id', async (req,res) => {
             res.status(402).json("usuario inexistente");
         }
         else {
-            if (isEmpty(username)) {
-                username = user.username;
+            //comprobar historial de pesos
+            hist_pesos = user.pesos
+            hist_fechas = user.fechas
+            var fecha_aux = hist_fechas[hist_fechas.length-1]
+            var today = new Date();
+            if (fecha_aux.getDate() == today.getDate() && fecha_aux.getMonth() == today.getMonth() && fecha_aux.getFullYear() && today.getFullYear()) {
+                console.log("HOLA 1")
+                if (hist_pesos[hist_pesos.length-1] == peso_actual) {
+                    console.log("HOLA 2")
+                }
+                else {
+                    console.log("HOLA 3")
+                    hist_pesos[hist_pesos.length-1] = peso_actual
+                }
             }
-            if (isEmpty(email)) {
-                email = user.email;
+            else {
+                console.log("HOLA 4")
+                hist_pesos.push(peso_actual)     
+                hist_fechas.push(Date.now())
             }
 
+            //Calcular peso ideal y IMC usuario
+            var IMC = (peso_actual*10000)/(Math.pow(altura, 2));
+            IMC = IMC.toFixed(2);
+            var peso_ideal = PI(altura, user.sexo).toFixed();
+
             const userMod = await User.findByIdAndUpdate({ _id: id }, {
-                username: username,
-                email: email,
-                peso_deseado: peso_deseado
+                peso_deseado: peso_deseado,
+                altura: altura,
+                peso_ideal: peso_ideal,
+                IMC: IMC,
+                peso_actual: peso_actual,
+                fechas: hist_fechas,
+                pesos: hist_pesos
             });
+
             if (isEmpty(userMod)) res.status(403).json("no se ha podido modificar usuario");
             else {
                 ano_nac = userMod.fecha_nacimiento.getFullYear();
@@ -161,6 +184,12 @@ router.post('/modificar/:id', async (req,res) => {
                     Kcal: tmb_peso_deseado
                 });
                 userMod.peso_deseado = peso_deseado
+                userMod.IMC = IMC
+                userMod.peso_ideal = peso_ideal
+                userMod.altura = altura
+                userMod.peso_actual = peso_actual
+                userMod.fechas = hist_fechas
+                userMod.pesos = hist_pesos
                 res.status(200).json(userMod);
             }
         }
@@ -202,7 +231,7 @@ router.post('/registrarPes/:id', async (req,res) => {
                 hist_fechas.push(Date.now())
             }
             var IMC = (peso_actual*10000)/(Math.pow(user.altura, 2));
-            IMC = IMC.toFixed();
+            IMC = IMC.toFixed(2);
             const userMod = await User.findByIdAndUpdate({ _id: id }, {
                 peso_actual: peso_actual,
                 fechas: hist_fechas,

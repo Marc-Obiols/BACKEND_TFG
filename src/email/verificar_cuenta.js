@@ -116,9 +116,9 @@ exports.makeBody = function(to, from, subject, message) {
 }
 
 exports.sendVerificationEmail = function(auth) {
-    message = 'Desde el equipo de desarrolladores de MatchPoint estamos encantados de que te hayas registrado en nuestra app.\n\n' +
+    message = 'Desde el equipo de desarrolladores de VidaSana estamos encantados de que te hayas registrado en nuestra app.\n\n' +
         'Antes de empezar a utilizarla tienes que verificar tu identidad haciendo click en el siguiente enlace: ' + enlace_verificacion + '\n\n' +
-        'Esperamos que nuestro servicio te resulte de utilidad. ENJOY!!!';
+        'Esperamos que nuestro servicio te resulte de utilidad. Gracias!!!';
     var raw = module.exports.makeBody(email_verificacion, 'vidasanatfg@gmail.com', 'Verifica tu correo electronico (MatchPoint)', message);
     const gmail = google.gmail({ version: 'v1', auth });
 

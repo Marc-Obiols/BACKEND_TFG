@@ -247,7 +247,7 @@ router.get('/predeterminada/datos', async (req, res) => {
         let response = [];
         for(let i = 0; i < rutinas.length; i++) {
             if (rutinas[i].predeterminada) {
-                var rut = {nombre: rutinas[i].nombre, id:rutinas[i]._id, tiempo_descanso: rutinas[i].tiempo_descanso};
+                var rut = {nombre: rutinas[i].nombre, id:rutinas[i]._id, tiempo_descanso: rutinas[i].tiempo_descanso, dificultad: rutinas[i].dificultad};
                 response.push(rut)
             }
         }

@@ -109,9 +109,16 @@ router.post('/login', async (req, res) => {
 router.get('/:id/image', async (req, res) => {
     var id = req.params.id;
     const profileImage = await User.findById({ _id: id });
-    console.log(profileImage.imagen.data);
     res.contentType(profileImage.imagen.contentType);
     res.send(profileImage.imagen.data);
+});
+
+router.post('/:id/Modimage', async (req, res) => {
+    var id = req.params.id;
+    const profileImage = await User.findByIdAndUpdate({ _id: id },{
+        imagen: { data:  req.body.image, contentType: 'image/jpg'}
+    });
+    return res.status(200).json(profileImage.url_img);
 });
 
 router.post('/modificar/:id', async (req,res) => {

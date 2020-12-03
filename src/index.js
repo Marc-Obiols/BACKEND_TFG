@@ -10,8 +10,10 @@ require('dotenv/config');
 var app = express();
 
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({ limit: "50mb", extended: true, parameterLimit: 50000 }));
+
+//app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true, parameterLimit: 50000 }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -22,6 +24,7 @@ var ejercicio = require('./routes/ejercicio');
 var rutina = require('./routes/rutina');
 var alimentacion = require('./routes/alimentacion');
 var validate = require('./routes/validate');
+var dieta = require('./routes/dietas');
 app.use('/', routes);
 app.use('/users', user);
 app.use('/plan', plan);
@@ -29,6 +32,7 @@ app.use('/ejercicio', ejercicio);
 app.use('/rutina', rutina);
 app.use('/alimentacion', alimentacion)
 app.use('/validate', validate)
+app.use('/dietas', dieta)
 
 
 // catch 404 and forward to error handler

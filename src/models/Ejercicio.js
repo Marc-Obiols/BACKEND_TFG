@@ -6,6 +6,7 @@ const EjercicioSchema = new mongoose.Schema({
     imagen:    { data: Buffer, contentType: String },
     musculos: [String],
     estiramiento: { type: Boolean, required: true },
+    id_youtube: {type: String, required: true, default: "no tiene"},
 }, { collection: 'Ejercicio' });
 
 module.exports = mongoose.model('Ejercicio', EjercicioSchema);

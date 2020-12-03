@@ -13,7 +13,8 @@ router.post('/register', async (req, res) => {
                 dificultad: valores[i].dificultad,
                 imagen: { data:  fs.readFileSync(path.join(__dirname, '../images/' + id_img + '.jpg')), contentType: 'image/jpg'},
                 musculos: valores[i].musculos,
-                estiramiento: valores[i].estiramiento
+                estiramiento: valores[i].estiramiento,
+                id_youtube: valores[i].id_youtube
             });
             const savedEjercicio = await ejercicio.save();
             if (isEmpty(savedEjercicio)) {

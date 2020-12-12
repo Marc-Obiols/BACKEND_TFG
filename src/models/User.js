@@ -16,6 +16,7 @@ const UserSchema = new mongoose.Schema({
     sexo: {type: String, require: true},
     IMC: { type: Number, required: true },
     validado: { type: Boolean, required: true, default: false },
+    dieta_recomendada: { type: mongoose.Schema.Types.ObjectId, ref: 'Dieta', default: null},
     url_img: {type: String, required: true, default: "no"}
 }, { collection: 'Users' });
 

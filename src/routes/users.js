@@ -5,13 +5,14 @@ const Plan = require('../models/Plan');
 const Email_val = require('../email/verificar_cuenta');
 const EmailValidator = require('email-deep-validator');
 const Alimentacion = require('../models/Alimentacion');
+const Rutina = require('../models/Rutina');
 var fs = require('fs');
 var path = require('path');
 const crypto = require('crypto');
 
 const emailValidator = new EmailValidator();
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res) => { //falta recomendar una dieta
 
     var hash = crypto.createHash('sha256');
     var pesos = [req.body.peso_actual];
@@ -26,6 +27,16 @@ router.post('/register', async (req, res) => {
         var peso_ideal = PI(req.body.altura, req.body.sexo).toFixed();
 
         try { //por si existe un user con ese nombre de usuario o email
+            var diferencia_peso = req.body.peso_actual - req.body.peso_deseado
+            if (diferencia_peso == 0) { //mantener
+
+            }
+            else if (diferencia_peso > 0) { //adelgazar
+
+            }
+            else { //ganar peso
+
+            }
             const user = new User({
                 username: req.body.username,
                 password: hash.update(req.body.password).digest('hex'),
@@ -121,7 +132,7 @@ router.post('/:id/Modimage', async (req, res) => {
     return res.status(200).json(profileImage.url_img);
 });
 
-router.post('/modificar/:id', async (req,res) => {
+router.post('/modificar/:id', async (req,res) => { //falta recomendar dieta
     id = req.params.id;
     peso_deseado = req.body.peso_deseado
     altura = req.body.altura
@@ -258,6 +269,23 @@ router.post('/registrarPes/:id', async (req,res) => {
     } catch(err) {
         console.log("error: " + err)
         res.status(413).json("Usuario innexistente");
+    }
+});
+
+router.post('/delete/:id', async (req,res) => {
+    var id = req.params.id
+    try {
+        const usuario = await User.findById({ _id: id });
+        if (isEmpty(usuario)) return res.status(401).json("Usuario innexistente");
+        const planEliminado = await Plan.deleteOne({Usuario: id});
+        const alimentacionEliminada = await Alimentacion.deleteOne({propietario: id});
+        const rutinasEliminadas = await Rutina.deleteMany({propietario: id})
+        const elimUser = await usuario.delete();
+        return res.status(200).json(elimUser);
+
+    } catch(err) {
+        console.log("error: " + err)
+        res.status(413).json("ERROR EN LA BD");
     }
 });
 

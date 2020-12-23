@@ -2,6 +2,7 @@
 const router = require('express').Router();
 const User = require('../models/User');
 const Plan = require('../models/Plan');
+const Dietas = require('../models/Dieta');
 const Email_val = require('../email/verificar_cuenta');
 const EmailValidator = require('email-deep-validator');
 const Alimentacion = require('../models/Alimentacion');
@@ -9,6 +10,7 @@ const Rutina = require('../models/Rutina');
 var fs = require('fs');
 var path = require('path');
 const crypto = require('crypto');
+const { query } = require('express');
 
 const emailValidator = new EmailValidator();
 
@@ -28,14 +30,20 @@ router.post('/register', async (req, res) => { //falta recomendar una dieta
 
         try { //por si existe un user con ese nombre de usuario o email
             var diferencia_peso = req.body.peso_actual - req.body.peso_deseado
+            var query_dietas = [];
             if (diferencia_peso == 0) { //mantener
-
+                query_dietas = await Dietas.find({objetivo: 'Mantener peso'}); 
             }
             else if (diferencia_peso > 0) { //adelgazar
+                query_dietas = await Dietas.find({objetivo: 'Perder peso'}); 
 
             }
             else { //ganar peso
-
+                query_dietas = await Dietas.find({objetivo: 'Ganar peso'}); 
+            }
+            const dietas_recomendadas = []
+            for (let i = 0; i < query_dietas.length; i++) {
+                dietas_recomendadas.push(query_dietas[0]._id)
             }
             const user = new User({
                 username: req.body.username,
@@ -51,6 +59,7 @@ router.post('/register', async (req, res) => { //falta recomendar una dieta
                 fechas: fechas,
                 email: req.body.email,
                 sexo: req.body.sexo,
+                dieta_recomendada: dietas_recomendadas,
                 IMC: IMC
             });
 
@@ -144,6 +153,21 @@ router.post('/modificar/:id', async (req,res) => { //falta recomendar dieta
             res.status(402).json("usuario inexistente");
         }
         else {
+            var diferencia_peso = peso_actual - peso_deseado
+            var query_dietas = [];
+            if (diferencia_peso == 0) { //mantener
+                query_dietas = await Dietas.find({objetivo: 'Mantener peso'}); 
+            }
+            else if (diferencia_peso > 0) { //adelgazar
+                query_dietas = await Dietas.find({objetivo: 'Perder peso'}); 
+            }
+            else { //ganar peso
+                query_dietas = await Dietas.find({objetivo: 'Ganar peso'}); 
+            }
+            const dietas_recomendadas = []
+            for (let i = 0; i < query_dietas.length; i++) {
+                dietas_recomendadas.push(query_dietas[0]._id)
+            }
             //comprobar historial de pesos
             hist_pesos = user.pesos
             hist_fechas = user.fechas
@@ -177,7 +201,8 @@ router.post('/modificar/:id', async (req,res) => { //falta recomendar dieta
                 IMC: IMC,
                 peso_actual: peso_actual,
                 fechas: hist_fechas,
-                pesos: hist_pesos
+                pesos: hist_pesos,
+                dieta_recomendada: dietas_recomendadas
             });
 
             if (isEmpty(userMod)) res.status(403).json("no se ha podido modificar usuario");
